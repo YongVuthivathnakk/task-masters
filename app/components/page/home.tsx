@@ -1,15 +1,155 @@
-import React from "react";
-import Image from "next/image"
+"use client";
+import Image from "next/image";
+import { ITaskStatus } from "@/app/type/status";
+import { getTaskStyleConfig } from "@/app/utils/taskStyles";
+import { ITask } from "@/app/type/task";
+import { useIsMobile } from "@/app/hook/use-mobile";
+import { DesktopInputCard, MobileInputCard } from "../input-card";
+import { useState } from "react";
+
+export const tasks: ITask[] = [
+  {
+    id: "1",
+    name: "Task in Progress",
+    description: "",
+    icon: "⏰",
+    status: "in_progress",
+  },
+  {
+    id: "2",
+    name: "Task Completed",
+    description: "",
+    icon: "🏆",
+    status: "completed",
+  },
+  {
+    id: "3",
+    name: "Task Won't Do",
+    description: "",
+    icon: "☕",
+    status: "wont_do",
+  },
+  {
+    id: "4",
+    name: "Task To Do",
+    description: "Work on a Challenge on devChallenges.io, learn TypeScript.",
+    icon: "📚",
+    status: "to_do",
+  },
+];
 
 export default function HomePage() {
-  return (
-    <div className="container-x container-y flex ">
-        <div className="flex gap-4 self-start">
-            <Image width={42} height={42} src={"/Logo.svg"} alt={"logo-image"} />
-      <h1 className=" text-title"> My Task Board</h1>
-            <Image width={24} height={24} src={"/Edit_duotone.svg"} alt={"logo-image"} />
+  const isMobile = useIsMobile();
 
+  const [selectedTask, setSelectedTask] = useState<ITask | null>(null);
+  return (
+    <div className="container-x container-y flex flex-col">
+      {/* HEADER */}
+      <div className="flex flex-col gap-6 pb-8">
+        <div className="flex gap-4">
+          <Image
+            className="self-start"
+            width={42}
+            height={42}
+            src={"/Logo.svg"}
+            alt={"logo-image"}
+          />
+          <div className="flex flex-col gap-2">
+            <h1 className=" text-title"> My Task Board</h1>
+            <h3 className="text-description">Tasks to keep organised</h3>
+          </div>
+
+          <Image
+            className="self-start py-3"
+            width={24}
+            height={24}
+            src={"/Edit_duotone.svg"}
+            alt={"logo-image"}
+          />
         </div>
+      </div>
+      {/* Card Seciton */}
+      <section className="flex flex-col gap-5">
+        {tasks.map((task, index) => (
+          <TaskCard
+            handleClick={() =>setSelectedTask(task)}
+            key={index}
+            title={task.name}
+            description={task.description}
+            icon={task.icon}
+            status={task.status}
+          />
+        ))}
+        <div className="bg-highlight-bg flex items-center justify-between p-4 rounded-2xl gap-4 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
+          <div className="flex items-center gap-3">
+            <div className="self-start bg-highlight-accent w-10 h-10 shrink-0 text-xl rounded-xl flex items-center justify-center p-2">
+              <Image
+                width={20}
+                height={20}
+                src={"/Add_round_duotone.svg"}
+                alt="add-button"
+              />
+            </div>
+            <div className="flex flex-col justify-center gap-1">
+              <p className="text-task-title">Add new task</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      {isMobile ? (
+        <MobileInputCard
+          selectedTask={selectedTask}
+          setSelectedTask={setSelectedTask}
+        />
+      ) : (
+        <DesktopInputCard
+          selectedTask={selectedTask}
+          setSelectedTask={setSelectedTask}
+        />
+      )}
     </div>
+  );
+}
+
+type TaskCardProps = {
+  title: string;
+  description?: string;
+  icon: string;
+  status: ITaskStatus;
+  handleClick: () => void ;
+};
+
+function TaskCard({ title, description, icon, handleClick, status }: TaskCardProps) {
+  const { bg, accent, badgeIcon } = getTaskStyleConfig(status);
+
+  return (
+    <button type="button" onClick={handleClick}>
+
+    <div
+      className={`${bg} flex items-center justify-between p-4 rounded-2xl gap-4 cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]`}
+    >
+      <div className="flex items-center gap-3">
+        <div className="self-start bg-white w-10 h-10 shrink-0 text-xl rounded-xl flex items-center justify-center p-2">
+          {icon}
+        </div>
+        <div className="flex flex-col justify-center gap-1">
+          <p className="text-task-title text-start">{title}</p>
+          {description && (
+            <p className="text-description text-start font-extralight max-w-75">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {badgeIcon != null && (
+        <div
+          className={`${accent} w-10 h-10 shrink-0 rounded-xl flex items-center justify-center p-2`}
+        >
+          <Image width={20} height={20} src={badgeIcon} alt="" />
+        </div>
+      )}
+    </div>
+    </button>
   );
 }

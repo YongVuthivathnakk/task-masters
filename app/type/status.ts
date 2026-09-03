@@ -1,0 +1,1 @@
+export type ITaskStatus = 'to_do' | 'in_progress' | 'completed' | 'wont_do';
