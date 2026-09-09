@@ -9,7 +9,7 @@ import { cn } from "cn";
 import Image from "next/image";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
-import { ITaskStatus } from "@/app/type/status";
+import { ITaskStatus } from "@/constraints/definitions/status";
 
 const ICONS = ["👨‍💻", "💬", "☕", "🏆", "📚", "⏰"];
 

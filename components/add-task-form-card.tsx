@@ -17,12 +17,12 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/app/hook/use-mobile";
-import { ITaskStatus } from "@/app/type/status";
 import { useState } from "react";
-import { ITask } from "@/app/type/task";
 import { toast } from "./ui/toast";
 import { AddTaskFormFields } from "./task-form-field";
 import Image from "next/image";
+import { ITaskStatus } from "@/constraints/definitions/status";
+import { ITask } from "@/constraints/definitions/board";
 
 type AddTaskFormProps = {
   open: boolean;
@@ -48,11 +48,13 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
 
   function onSubmit() {
     const task: ITask = {
-      id: Date.now(),
+      id: Date.now().toLocaleString(),
       name: name,
       description: description,
       icon: icon,
       status: status,
+      board_id: "",
+      created_at: "",
     };
 
     console.log(task);
@@ -85,7 +87,7 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
             setStatus={setStatus}
           />
         </div>
-        <DialogFooter className="flex-row justify-end gap-2 px-6 pb-2">
+        <DialogFooter className="flex-row justify-end gap-2 px-3 pb-2">
           <Button
             className={
               "rounded-full px-6 flex items-center hover:bg-wontdo-accent active:bg-wontdo-accent bg-text-muted justify-between"
@@ -135,7 +137,7 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
             setStatus={setStatus}
           />
         </div>
-        <SheetFooter className="flex-row justify-end gap-2 px-6">
+        <SheetFooter className="flex-row justify-end gap-2 px-3">
           <Button
             className={
               "rounded-full px-6 flex items-center hover:bg-wontdo-accent active:bg-wontdo-accent bg-text-muted justify-between"

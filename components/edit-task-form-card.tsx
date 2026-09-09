@@ -24,17 +24,18 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ITask } from "@/app/type/task";
+
 import { useIsMobile } from "@/app/hook/use-mobile";
-import { useState } from "react";
-import { ITaskStatus } from "@/app/type/status";
+import { SetStateAction, useState } from "react";
 import { AddTaskFormFields } from "./task-form-field";
 import { toast } from "./ui/toast";
 import Image from "next/image";
+import { ITaskStatus } from "@/constraints/definitions/status";
+import { ITask } from "@/constraints/definitions/board";
 
 type EditTaskFormProps = {
   selectedTask: ITask | null;
-  setSelectedTask: (task: ITask | null) => void;
+  setSelectedTask: (task: SetStateAction<ITask | null>) => void;
 };
 
 export default function EditTaskFormCard({
@@ -65,11 +66,13 @@ export default function EditTaskFormCard({
 
   function onSubmit() {
     const task: ITask = {
-      id: Date.now(),
+      id: Date.now().toLocaleString(),
       name: name,
       description: description,
       icon: icon,
       status: status,
+      board_id: "",
+      created_at: "",
     };
 
     console.log(task);
@@ -107,7 +110,7 @@ export default function EditTaskFormCard({
               setStatus={setStatus}
             />
           </div>
-          <DialogFooter className="flex-row justify-end gap-2 px-6 pb-2">
+          <DialogFooter className="flex-row justify-end gap-2 px-3 pb-2">
             <Button
               onClick={() => setOpenDelete(true)}
               className={
@@ -167,7 +170,7 @@ export default function EditTaskFormCard({
               setStatus={setStatus}
             />
           </div>
-          <SheetFooter className="flex-row justify-end gap-2 px-6">
+          <SheetFooter className="flex-row justify-end gap-2 px-3">
             <Button
               onClick={() => setOpenDelete(true)}
               className={
