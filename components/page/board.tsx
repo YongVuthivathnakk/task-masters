@@ -1,46 +1,37 @@
 "use client";
 import Image from "next/image";
-import { ITaskStatus } from "@/app/type/status";
-import { getTaskStyleConfig } from "@/app/utils/taskStyles";
-import { ITask } from "@/app/type/task";
+import { ITaskStatus } from "@/constraints/definitions/status";
+import { getTaskStyleConfig } from "@/app/utils/task-styles";
 import EditTaskFormCard from "../edit-task-form-card";
 import { useState } from "react";
 import AddTaskFormCard from "../add-task-form-card";
+import { IBoard, ITask } from "@/constraints/definitions/board";
+import { Button } from "../ui/button";
+import { EditBoardFormCard } from "../edit-board-form-card";
 
-export const tasks: ITask[] = [
-  {
-    id: "1",
-    name: "Task in Progress",
-    description: "",
-    icon: "⏰",
-    status: "in_progress",
-  },
-  {
-    id: "2",
-    name: "Task Completed",
-    description: "",
-    icon: "🏆",
-    status: "completed",
-  },
-  {
-    id: "3",
-    name: "Task Won't Do",
-    description: "",
-    icon: "☕",
-    status: "wont_do",
-  },
-  {
-    id: "4",
-    name: "Task To Do",
-    description: "Work on a Challenge on devChallenges.io, learn TypeScript.",
-    icon: "📚",
-    status: "to_do",
-  },
-];
+type BoardProps = {
+  board: IBoard;
+};
 
-export default function HomePage() {
+export default function Board({ board }: BoardProps) {
   const [selectedTask, setSelectedTask] = useState<ITask | null>(null);
+  const [tasks, setTasks] = useState(board.tasks);
   const [openAddTask, setOpenAddTask] = useState(false);
+  const [openEditBoard, setOpenEditBoard] = useState(false);
+
+  const [name, setName] = useState(board.name);
+  const [description, setDescription] = useState(board.description);
+
+  const removeTask = (id: string | undefined) => {
+    if (!id) {
+      return;
+    }
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
+  };
+
+  const sortedTasks = [...tasks].sort((firstTask, secondTask) =>
+    secondTask.created_at.localeCompare(firstTask.created_at),
+  );
 
   return (
     <div className="container-x container-y flex flex-col">
@@ -55,22 +46,31 @@ export default function HomePage() {
             alt={"logo-image"}
           />
           <div className="flex flex-col gap-2">
-            <h1 className=" text-title"> My Task Board</h1>
-            <h3 className="text-description">Tasks to keep organised</h3>
-          </div>
+            <div className="flex gap-2 items-center">
+              <h1 className=" text-title"> {name}</h1>
 
-          <Image
-            className="self-start py-3"
-            width={24}
-            height={24}
-            src={"/Edit_duotone.svg"}
-            alt={"logo-image"}
-          />
+              <Button
+                type="button"
+                onClick={() => setOpenEditBoard(true)}
+                className={""}
+                variant={"ghost"}
+              >
+                <Image
+                  width={24}
+                  height={24}
+                  src={"/Edit_duotone.svg"}
+                  alt={"logo-image"}
+                />
+              </Button>
+            </div>
+
+            <h3 className="text-description">{description}</h3>
+          </div>
         </div>
       </div>
       {/* Card Seciton */}
       <section className="flex flex-col gap-5">
-        {tasks.map((task, index) => (
+        {sortedTasks.map((task, index) => (
           <TaskCard
             handleClick={() => setSelectedTask(task)}
             key={index}
@@ -99,10 +99,35 @@ export default function HomePage() {
           </div>
         </button>
       </section>
-      <AddTaskFormCard open={openAddTask} setOpen={setOpenAddTask} />
+      <AddTaskFormCard
+        boardId={board.id}
+        open={openAddTask}
+        setOpen={setOpenAddTask}
+        onTaskCreated={(createdTask) => {
+          setTasks((currentTasks) => [...currentTasks, createdTask]);
+        }}
+      />
       <EditTaskFormCard
+        key={selectedTask?.id ?? "no-selected-task"}
         selectedTask={selectedTask}
         setSelectedTask={setSelectedTask}
+        removeTask={() => removeTask(selectedTask?.id)}
+        onTaskUpdated={(updatedTask) => {
+          setTasks((currentTasks) =>
+            currentTasks.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task,
+            ),
+          );
+        }}
+      />
+      <EditBoardFormCard
+        name={name}
+        description={description}
+        open={openEditBoard}
+        setOpen={setOpenEditBoard}
+        setName={setName}
+        setDescription={setDescription}
+        id={board.id}
       />
     </div>
   );

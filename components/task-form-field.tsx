@@ -9,7 +9,7 @@ import { cn } from "cn";
 import Image from "next/image";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
-import { ITaskStatus } from "@/app/type/status";
+import { ITaskStatus } from "@/constraints/definitions/status";
 
 const ICONS = ["👨‍💻", "💬", "☕", "🏆", "📚", "⏰"];
 
@@ -43,16 +43,16 @@ type TaskFormFieldsProps = {
   formId: string;
   onSubmit: () => void;
   name: string;
-  setName: (v: string) => void;
+  setName: (name: string) => void;
   description: string;
-  setDescription: (v: string) => void;
+  setDescription: (description: string) => void;
   icon: string;
-  setIcon: (v: string) => void;
+  setIcon: (icon: string) => void;
   status: ITaskStatus;
-  setStatus: (v: ITaskStatus) => void;
+  setStatus: (status: ITaskStatus) => void;
 };
 
-export function AddTaskFormFields({
+export function TaskFormFields({
   formId,
   onSubmit,
   name,
@@ -64,8 +64,8 @@ export function AddTaskFormFields({
   status,
   setStatus,
 }: TaskFormFieldsProps) {
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     onSubmit();
   }
 
@@ -150,7 +150,7 @@ export function AddTaskFormFields({
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  onClick={() => setStatus(opt.value)}
+                  onClick={() => setStatus(selected ? "to_do" : opt.value)}
                   className={cn(
                     "flex items-center justify-between gap-3 border-2 rounded-xl pl-0.5 pr-2 py-0.5 transition-colors basis-[calc(50%-0.375rem)] ",
                     selected ? "border-primary" : "border-border",
