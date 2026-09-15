@@ -45,7 +45,7 @@ export function EditBoardFormCard({
     description: string;
   }) => {
     const response = await fetch(`/api/boards/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },

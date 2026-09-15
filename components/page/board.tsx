@@ -15,11 +15,23 @@ type BoardProps = {
 
 export default function Board({ board }: BoardProps) {
   const [selectedTask, setSelectedTask] = useState<ITask | null>(null);
+  const [tasks, setTasks] = useState(board.tasks);
   const [openAddTask, setOpenAddTask] = useState(false);
   const [openEditBoard, setOpenEditBoard] = useState(false);
 
   const [name, setName] = useState(board.name);
   const [description, setDescription] = useState(board.description);
+
+  const removeTask = (id: string | undefined) => {
+    if (!id) {
+      return;
+    }
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
+  };
+
+  const sortedTasks = [...tasks].sort((firstTask, secondTask) =>
+    secondTask.created_at.localeCompare(firstTask.created_at),
+  );
 
   return (
     <div className="container-x container-y flex flex-col">
@@ -58,7 +70,7 @@ export default function Board({ board }: BoardProps) {
       </div>
       {/* Card Seciton */}
       <section className="flex flex-col gap-5">
-        {board.tasks.map((task, index) => (
+        {sortedTasks.map((task, index) => (
           <TaskCard
             handleClick={() => setSelectedTask(task)}
             key={index}
@@ -87,10 +99,26 @@ export default function Board({ board }: BoardProps) {
           </div>
         </button>
       </section>
-      <AddTaskFormCard open={openAddTask} setOpen={setOpenAddTask} />
+      <AddTaskFormCard
+        boardId={board.id}
+        open={openAddTask}
+        setOpen={setOpenAddTask}
+        onTaskCreated={(createdTask) => {
+          setTasks((currentTasks) => [...currentTasks, createdTask]);
+        }}
+      />
       <EditTaskFormCard
+        key={selectedTask?.id ?? "no-selected-task"}
         selectedTask={selectedTask}
         setSelectedTask={setSelectedTask}
+        removeTask={() => removeTask(selectedTask?.id)}
+        onTaskUpdated={(updatedTask) => {
+          setTasks((currentTasks) =>
+            currentTasks.map((task) =>
+              task.id === updatedTask.id ? updatedTask : task,
+            ),
+          );
+        }}
       />
       <EditBoardFormCard
         name={name}

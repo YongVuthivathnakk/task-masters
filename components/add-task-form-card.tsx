@@ -17,24 +17,33 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/app/hook/use-mobile";
-import { useState } from "react";
-import { toast } from "./ui/toast";
-import { AddTaskFormFields } from "./task-form-field";
+import { TaskFormFields } from "./task-form-field";
 import Image from "next/image";
+import { useState } from "react";
 import { ITaskStatus } from "@/constraints/definitions/status";
 import { ITask } from "@/constraints/definitions/board";
+import { toast } from "./ui/toast";
 
 type AddTaskFormProps = {
   open: boolean;
+  boardId: string;
   setOpen: (open: boolean) => void;
+  onTaskCreated: (task: ITask) => void;
 };
 
-export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
+export default function AddTaskFormCard({
+  boardId,
+  open,
+  setOpen,
+  onTaskCreated,
+}: AddTaskFormProps) {
   const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
   const [status, setStatus] = useState<ITaskStatus>("to_do");
+
+  const [loading, setLoading] = useState(false);
 
   function reset() {
     setName("");
@@ -42,30 +51,47 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
     setIcon("");
     setStatus("to_do");
   }
+
   function isFormInvalid() {
     return !name || !icon;
   }
 
-  function onSubmit() {
-    const task: ITask = {
-      id: Date.now().toLocaleString(),
-      name: name,
-      description: description,
-      icon: icon,
-      status: status,
-      board_id: "",
-      created_at: "",
-    };
+  const onSubmit = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          description,
+          icon,
+          status,
+          board_id: boardId,
+        }),
+      });
 
-    console.log(task);
-    setOpen(false);
-    toast.add({
-      type: "success",
-      description: "New task have been created",
-    });
-
-    reset();
-  }
+      if (!response.ok) {
+        throw new Error("Failed to create task");
+      }
+      const createdTask: ITask = await response.json();
+      onTaskCreated(createdTask);
+      setOpen(false);
+      toast.add({
+        type: "success",
+        description: "New task have been created",
+      });
+      reset();
+    } catch (error) {
+      console.error(error);
+      toast.add({
+        type: "error",
+        description: "Failed to create task",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return isMobile ? (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -74,8 +100,8 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
           <DialogTitle className={"text-xl"}>Add task</DialogTitle>
         </DialogHeader>
         <div className="overflow-y-auto py-1 px-3">
-          <AddTaskFormFields
-            formId={"add-form"}
+          <TaskFormFields
+            formId="add-form"
             onSubmit={onSubmit}
             name={name}
             setName={setName}
@@ -95,14 +121,12 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
             type="button"
             onClick={() => {
               setOpen(false);
-              reset();
             }}
           >
             <span>Cancel</span>
           </Button>
 
           <Button
-            disabled={isFormInvalid()}
             className={"rounded-full px-6 flex items-center justify-between"}
             type="submit"
             form="add-form"
@@ -124,8 +148,8 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
           <SheetTitle className={"text-xl"}>Add Task</SheetTitle>
         </SheetHeader>
         <div className="overflow-y-auto py-1 px-3">
-          <AddTaskFormFields
-            formId={"add-form"}
+          <TaskFormFields
+            formId="add-form"
             onSubmit={onSubmit}
             name={name}
             setName={setName}
@@ -157,8 +181,19 @@ export default function AddTaskFormCard({ open, setOpen }: AddTaskFormProps) {
             type="submit"
             form="add-form"
           >
-            <span> Add</span>
-            <Image width={18} height={18} alt="done" src={"/Done_round.svg"} />
+            {loading ? (
+              <span>Creating...</span>
+            ) : (
+              <div className="flex items-center gap-2 justify-between">
+                <span>Add</span>
+                <Image
+                  width={18}
+                  height={18}
+                  alt="done"
+                  src={"/Done_round.svg"}
+                />
+              </div>
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>

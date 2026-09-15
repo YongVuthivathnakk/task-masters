@@ -20,7 +20,7 @@ export async function GET(
   return NextResponse.json(board);
 }
 
-export async function PATCH(
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {

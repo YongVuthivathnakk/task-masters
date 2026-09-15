@@ -8,7 +8,7 @@ export default async function BoardPage({
   const { id } = await params;
   const res = await fetch(`${process.env.BASE_URL}/api/boards/${id}`);
   if (!res.ok) {
-    return <div>ERROR</div>;
+    return <div>error</div>;
   }
   const board = await res.json();
 

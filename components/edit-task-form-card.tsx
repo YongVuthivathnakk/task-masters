@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 
 import { useIsMobile } from "@/app/hook/use-mobile";
 import { SetStateAction, useState } from "react";
-import { AddTaskFormFields } from "./task-form-field";
+import { TaskFormFields } from "./task-form-field";
 import { toast } from "./ui/toast";
 import Image from "next/image";
 import { ITaskStatus } from "@/constraints/definitions/status";
@@ -36,11 +36,15 @@ import { ITask } from "@/constraints/definitions/board";
 type EditTaskFormProps = {
   selectedTask: ITask | null;
   setSelectedTask: (task: SetStateAction<ITask | null>) => void;
+  onTaskUpdated: (task: ITask) => void;
+  removeTask: () => void;
 };
 
 export default function EditTaskFormCard({
   selectedTask,
+  removeTask,
   setSelectedTask,
+  onTaskUpdated,
 }: EditTaskFormProps) {
   const isMobile = useIsMobile();
   const [name, setName] = useState(selectedTask?.name || "");
@@ -54,6 +58,8 @@ export default function EditTaskFormCard({
     selectedTask?.status || "to_do",
   );
 
+  const [loading, setLoading] = useState(false);
+
   function reset() {
     setName("");
     setDescription("");
@@ -64,29 +70,72 @@ export default function EditTaskFormCard({
     return !name || !icon;
   }
 
-  function onSubmit() {
-    const task: ITask = {
-      id: Date.now().toLocaleString(),
-      name: name,
-      description: description,
-      icon: icon,
-      status: status,
-      board_id: "",
-      created_at: "",
-    };
+  const onDelete = async () => {
+    if (!selectedTask) return;
+    try {
+      const response = await fetch(`/api/tasks/${selectedTask.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
 
-    console.log(task);
-    setSelectedTask(null);
-    toast.add({
-      type: "success",
-      description: "Task have been edited",
-    });
+      if (!response.ok) {
+        throw new Error("Failed to delete task");
+      }
+      setSelectedTask(null);
+      toast.add({
+        type: "success",
+        description: "Task has been removed",
+      });
+      removeTask();
+    } catch (error) {
+      console.error(error);
+      toast.add({
+        type: "error",
+        description: "Failed to edit task",
+      });
+    }
+  };
 
-    reset();
-  }
+  const onSubmit = async () => {
+    if (!selectedTask) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/tasks/${selectedTask.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, icon, status }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update task");
+      }
+
+      const updatedTask: ITask = await response.json();
+      onTaskUpdated(updatedTask);
+      setSelectedTask(null);
+      toast.add({
+        type: "success",
+        description: "Task has been edited",
+      });
+      reset();
+    } catch (error) {
+      console.error(error);
+      toast.add({
+        type: "error",
+        description: "Failed to edit task",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return isMobile ? (
     <>
-      <AlertDelete open={openDelete} setOpen={setOpenDelete} />
+      <AlertDelete
+        handleDelete={() => onDelete()}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      />
 
       <Dialog
         open={!!selectedTask}
@@ -97,7 +146,7 @@ export default function EditTaskFormCard({
             <DialogTitle className={"text-xl"}>Task details</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto py-1 px-3">
-            <AddTaskFormFields
+            <TaskFormFields
               formId={"edit-form"}
               onSubmit={onSubmit}
               name={name}
@@ -128,7 +177,7 @@ export default function EditTaskFormCard({
               type="submit"
               form="edit-form"
             >
-              <span>Save</span>
+              <span>{loading ? "Saving..." : "Save"}</span>
               <Image
                 width={18}
                 height={18}
@@ -142,7 +191,11 @@ export default function EditTaskFormCard({
     </>
   ) : (
     <>
-      <AlertDelete open={openDelete} setOpen={setOpenDelete} />
+      <AlertDelete
+        handleDelete={onDelete}
+        open={openDelete}
+        setOpen={setOpenDelete}
+      />
 
       <Sheet
         open={!!selectedTask}
@@ -157,7 +210,7 @@ export default function EditTaskFormCard({
             <SheetTitle className={"text-xl"}>Task details</SheetTitle>
           </SheetHeader>
           <div className="overflow-y-auto py-1 px-3">
-            <AddTaskFormFields
+            <TaskFormFields
               formId={"edit-form"}
               onSubmit={onSubmit}
               name={name}
@@ -184,17 +237,23 @@ export default function EditTaskFormCard({
 
             <Button
               disabled={isFormInvalid()}
-              className={"rounded-full px-6 flex items-center justify-between"}
+              className={"rounded-full px-6 flex items-center"}
               type="submit"
               form="edit-form"
             >
-              <span>Save</span>
-              <Image
-                width={18}
-                height={18}
-                alt="done"
-                src={"/Done_round.svg"}
-              />
+              {loading ? (
+                <span>Saving...</span>
+              ) : (
+                <div className="flex items-center gap-2 justify-between">
+                  <span>Save</span>
+                  <Image
+                    width={18}
+                    height={18}
+                    alt="done"
+                    src={"/Done_round.svg"}
+                  />
+                </div>
+              )}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -206,9 +265,11 @@ export default function EditTaskFormCard({
 function AlertDelete({
   open,
   setOpen,
+  handleDelete,
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
+  handleDelete: () => void;
 }) {
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -222,7 +283,14 @@ function AlertDelete({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
+          <AlertDialogAction
+            onClick={() => {
+              handleDelete();
+              setOpen(false);
+            }}
+          >
+            Continue
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
