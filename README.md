@@ -1,37 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Master
 
-## Getting Started
+A small full-stack task board built as a [DevChallenges](https://devchallenges.io/) exercise. Users can create a board, manage tasks, edit board and task details, and persist changes in Supabase.
 
-First, run the development server:
+## Features
+
+- Create a board with starter tasks.
+- Create, edit, and delete tasks.
+- Edit board name and description.
+- Track task status: `to_do`, `in_progress`, `completed`, or `wont_do`.
+- Keep the newest task at the top of the board.
+- Persist the active board id in an HTTP-only `board_id` cookie.
+- Use a responsive dialog on mobile and sheet layout on larger screens.
+
+## Technology
+
+- Next.js 16 App Router
+- React 19 and TypeScript
+- Supabase for persistence
+- Tailwind CSS and shadcn-style UI primitives
+- Bun for package management and scripts
+
+## Prerequisites
+
+- Bun `1.3.14` or a compatible version
+- A Supabase project with `boards` and `tasks` tables
+
+## Setup
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+```
+
+Create `.env.local` in the project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+BASE_URL=http://localhost:3000
+```
+
+`BASE_URL` is used by the server-rendered board page when it requests a board through the internal API.
+
+Start the development server:
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), then select **Create Board**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Data Model
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app expects the following Supabase tables and fields.
 
-## Learn More
+### `boards`
 
-To learn more about Next.js, take a look at the following resources:
+| Field         | Purpose            |
+| ------------- | ------------------ |
+| `id`          | Primary key        |
+| `name`        | Board name         |
+| `description` | Board description  |
+| `created_at`  | Creation timestamp |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `tasks`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Field         | Purpose                            |
+| ------------- | ---------------------------------- |
+| `id`          | Primary key                        |
+| `board_id`    | Foreign key to `boards.id`         |
+| `name`        | Task name                          |
+| `description` | Optional task description          |
+| `icon`        | Task icon or emoji                 |
+| `status`      | One of the supported task statuses |
+| `created_at`  | Used for newest-first ordering     |
 
-## Deploy on Vercel
+When a board is created, `app/utils/default-tasks.ts` provides the initial tasks.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# task-masters
+### Boards
+
+| Method | Endpoint          | Behavior                                            |
+| ------ | ----------------- | --------------------------------------------------- |
+| `POST` | `/api/boards`     | Creates a board and default tasks; sets `board_id`. |
+| `GET`  | `/api/boards/:id` | Returns a board with its tasks.                     |
+| `PUT`  | `/api/boards/:id` | Updates board name and description.                 |
+
+### Tasks
+
+| Method   | Endpoint         | Behavior                                  |
+| -------- | ---------------- | ----------------------------------------- |
+| `POST`   | `/api/tasks`     | Creates a task and returns it with `201`. |
+| `PUT`    | `/api/tasks/:id` | Updates task fields.                      |
+| `DELETE` | `/api/tasks/:id` | Deletes a task and returns `204`.         |
+
+Task creation expects JSON in this shape:
+
+```json
+{
+  "name": "Review pull request",
+  "description": "Check the latest changes",
+  "icon": "🔎",
+  "status": "to_do",
+  "board_id": "your-board-id"
+}
+```
+
+## Project Structure
+
+```text
+app/
+	api/                  Board and task route handlers
+	boards/[id]/          Server-rendered board page
+	page.tsx              Cookie-aware entry point
+components/
+	page/                 Board and board workflow components
+	ui/                   Reusable UI primitives
+constraints/            Shared domain types
+lib/supabase.ts         Supabase client
+```
+
+## Scripts
+
+```bash
+bun dev       # Start the development server
+bun run lint  # Run ESLint
+bun run build # Create a production build
+bun start     # Start the production server
+```
+
+## Exercise Attribution
+
+This project was created as a practice exercise from [DevChallenges](https://devchallenges.io/). The application logic and Supabase integration are implemented in this repository.
